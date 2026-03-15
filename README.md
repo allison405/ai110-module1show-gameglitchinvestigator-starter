@@ -25,13 +25,13 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+- [ ] This game is an interactive number-guessing game. You can choose your own difficulty level, make attempts at guessing the secret number, and get a finalized score! Replay as many times as you want, but you only get a certain number of tries each round, so you have to make intuitive guesses. Toggle on or off the hints, or change your difficulty level to align with your game-playing needs.
+- [ ] Bugs I found were in the hints given, the initial message displayed, and the broken new game function. The hints were misleading the user in getting towards the right number. The initial message didn't provide the correct range of numbers to guess from. Attempting to start a new game by pressing the corresponding button would cause the entire game to stop working.
+- [ ] I adjusted the game by patching the bugs listed above, aligning them more to a normal user experience, fixed the new game so that users could continue playing more rounds, and also moved some code from the app.py file over to logic_utils.py.
 
 ## 📸 Demo
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+- [ ] ![screenshot of winning, updated game]()
 
 ## 🚀 Stretch Features
 
