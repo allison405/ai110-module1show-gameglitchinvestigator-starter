@@ -33,16 +33,17 @@ def check_guess(guess, secret):
     if guess == secret:
         return "Win", "🎉 Correct!"
 
+    #FIX: Swapped the too low and too high results to match the correct logic using CLAUDE.
     try:
-        if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
+        if guess < secret:
+            return "Too Low", "📈 Go HIGHER!"
         else:
-            return "Too Low", "📉 Go LOWER!"
+            return "Too High", "📉 Go LOWER!"
     except TypeError:
         g = str(guess)
         if g == secret:
             return "Win", "🎉 Correct!"
-        if g > secret:
+        if g < secret:
             return "Too High", "📈 Go HIGHER!"
         return "Too Low", "📉 Go LOWER!"
 
@@ -106,8 +107,9 @@ if "history" not in st.session_state:
 
 st.subheader("Make a guess")
 
+# FIX: changed the range message to hold the proper highest number for each difficulty level using CLAUDE.
 st.info(
-    f"Guess a number between 1 and 100. "
+    f"Guess a number between 1 and {high}. "
     f"Attempts left: {attempt_limit - st.session_state.attempts}"
 )
 
@@ -134,6 +136,9 @@ with col3:
 if new_game:
     st.session_state.attempts = 0
     st.session_state.secret = random.randint(1, 100)
+    #FIX: added the status of playing and a history for the new game session to operate. Done by CLAUDE.
+    st.session_state.status = "playing"
+    st.session_state.history = []
     st.success("New game started.")
     st.rerun()
 
