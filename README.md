@@ -161,3 +161,4 @@ Claude Code was used extensively throughout this project for structuring the age
 ## Demo
 
 - [ ] ![Screenshot of winning game](assets/screenshot.png)
+- [Video Demo](https://www.loom.com/share/5779bf855ce64b32b8288adabe1abdc0)
