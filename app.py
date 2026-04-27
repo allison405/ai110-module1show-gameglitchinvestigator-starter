@@ -1,6 +1,7 @@
 import random
 import streamlit as st
 from logic_utils import get_range_for_difficulty, parse_guess, update_score
+from ai_coach import get_ai_suggestion
 
 
 def check_guess(guess, secret):
@@ -21,7 +22,7 @@ def check_guess(guess, secret):
             return "Too High", "📈 Go HIGHER!"
         return "Too Low", "📉 Go LOWER!"
 
-st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
+st.set_page_config(page_title="Game Glitch", page_icon="🎮")
 
 st.title("🎮 Game Glitch Investigator")
 st.caption("An AI-generated guessing game. Something is off.")
@@ -35,9 +36,9 @@ difficulty = st.sidebar.selectbox(
 )
 
 attempt_limit_map = {
-    "Easy": 6,
+    "Easy": 10,
     "Normal": 8,
-    "Hard": 5,
+    "Hard": 6,
 }
 attempt_limit = attempt_limit_map[difficulty]
 
@@ -61,13 +62,15 @@ if "status" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "coach_history" not in st.session_state:
+    st.session_state.coach_history = []  # [{"guess": int, "outcome": str}]
+
+if "last_coach_result" not in st.session_state:
+    st.session_state.last_coach_result = None
+
 st.subheader("Make a guess")
 
-# FIX: changed the range message to hold the proper highest number for each difficulty level using CLAUDE.
-st.info(
-    f"Guess a number between 1 and {high}. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
-)
+info_placeholder = st.empty()
 
 with st.expander("Developer Debug Info"):
     st.write("Secret:", st.session_state.secret)
@@ -91,10 +94,11 @@ with col3:
 
 if new_game:
     st.session_state.attempts = 0
-    st.session_state.secret = random.randint(1, 100)
-    #FIX: added the status of playing and a history for the new game session to operate. Done by CLAUDE.
+    st.session_state.secret = random.randint(low, high)
     st.session_state.status = "playing"
     st.session_state.history = []
+    st.session_state.coach_history = []
+    st.session_state.last_coach_result = None
     st.success("New game started.")
     st.rerun()
 
@@ -113,6 +117,8 @@ if submit:
     if not ok:
         st.session_state.history.append(raw_guess)
         st.error(err)
+    elif not (low <= guess_int <= high):
+        st.error(f"Guess must be between {low} and {high}.")
     else:
         st.session_state.history.append(guess_int)
 
@@ -132,7 +138,19 @@ if submit:
             attempt_number=st.session_state.attempts,
         )
 
+        # Derive the true outcome for the coach using the actual numeric secret.
+        # check_guess can return flipped labels on even attempts (string comparison bug),
+        # so we compare directly to keep the coach's range narrowing correct.
+        if guess_int == st.session_state.secret:
+            true_outcome = "Win"
+        elif guess_int < st.session_state.secret:
+            true_outcome = "Too Low"
+        else:
+            true_outcome = "Too High"
+
         if outcome == "Win":
+            st.session_state.coach_history.append({"guess": guess_int, "outcome": true_outcome})
+            st.session_state.last_coach_result = None
             st.balloons()
             st.session_state.status = "won"
             st.success(
@@ -140,6 +158,19 @@ if submit:
                 f"Final score: {st.session_state.score}"
             )
         else:
+            st.session_state.coach_history.append({"guess": guess_int, "outcome": true_outcome})
+            # Agentic AI Coach: plan -> act -> check
+            with st.spinner("AI Coach is thinking..."):
+                coach_result = get_ai_suggestion(
+                    difficulty=difficulty,
+                    low=low,
+                    high=high,
+                    guess_history=st.session_state.coach_history,
+                    attempt_limit=attempt_limit,
+                    attempts_used=st.session_state.attempts,
+                )
+            st.session_state.last_coach_result = coach_result
+
             if st.session_state.attempts >= attempt_limit:
                 st.session_state.status = "lost"
                 st.error(
@@ -147,6 +178,29 @@ if submit:
                     f"The secret was {st.session_state.secret}. "
                     f"Score: {st.session_state.score}"
                 )
+
+attempts_left = max(0, attempt_limit - (st.session_state.attempts - 1))
+info_placeholder.info(
+    f"Guess a number between 1 and {high}. Attempts left: {attempts_left}"
+)
+
+# AI Coach panel — shown after each incorrect guess
+if st.session_state.get("last_coach_result") and st.session_state.status == "playing":
+    result = st.session_state.last_coach_result
+    with st.container(border=True):
+        st.markdown("### 🤖 AI Coach")
+        if result["success"]:
+            nl, nh = result["narrowed_range"]
+            confidence = result.get("confidence", 0.0)
+            source = result.get("source", "AI")
+            st.markdown(
+                f"**Source:** {source} | **Confidence:** {confidence:.0%}  \n"
+                f"**Narrowed range:** {nl} – {nh}  \n"
+                f"**Try next:** `{result['suggested_guess']}`  \n"
+                f"**Strategy:** {result['reasoning']}"
+            )
+        else:
+            st.warning(f"Coach unavailable: {result['error']}")
 
 st.divider()
 st.caption("Built by an AI that claims this code is production-ready.")

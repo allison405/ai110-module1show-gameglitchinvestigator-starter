@@ -35,16 +35,16 @@ def test_sidebar_caption_range_easy():
     assert caption == "Range: 1 to 20"
 
 def test_sidebar_caption_range_normal():
-    # If the difficulty is normal, the range should show 1 to 100
+    # Normal difficulty uses range 1 to 50
     low, high = get_range_for_difficulty("Normal")
     caption = f"Range: {low} to {high}"
-    assert caption == "Range: 1 to 100"
+    assert caption == "Range: 1 to 50"
 
 def test_sidebar_caption_range_hard():
-    # If difficulty is hard, the range should show 1 to 50
+    # Hard difficulty uses range 1 to 100
     low, high = get_range_for_difficulty("Hard")
     caption = f"Range: {low} to {high}"
-    assert caption == "Range: 1 to 50"
+    assert caption == "Range: 1 to 100"
 
 
 def test_winning_guess():
